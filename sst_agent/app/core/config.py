@@ -2,6 +2,7 @@
 
 from dotenv import load_dotenv
 import os
+from sqlalchemy.engine import URL
 
 
 load_dotenv()
@@ -13,8 +14,29 @@ DEBUG = os.getenv("DEBUG", "false").lower() in {"1", "true", "yes", "on"}
 # Groq API
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
-# PostgreSQL Database
-DATABASE_URL = os.getenv("DATABASE_URL", "")
+def build_database_url() -> str:
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        return database_url
+
+    username = os.getenv("POSTGRES_USER", "postgres")
+    password = os.getenv("POSTGRES_PASSWORD", "postgres")
+    host = os.getenv("POSTGRES_HOST", "db")
+    port = int(os.getenv("POSTGRES_PORT", "5432"))
+    database = os.getenv("POSTGRES_DB", "sst_agent")
+
+    return URL.create(
+        "postgresql+psycopg2",
+        username=username,
+        password=password,
+        host=host,
+        port=port,
+        database=database,
+    ).render_as_string(hide_password=False)
+
+
+DATABASE_URL = build_database_url()
+DB_DDL_AUTO = os.getenv("DB_DDL_AUTO", "create").strip().lower()
 
 # Embeddings
 EMBEDDING_MODEL = os.getenv(

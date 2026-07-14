@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from pgvector.sqlalchemy import Vector
 from datetime import datetime
-from sst_agent.app.core.config import DATABASE_URL, EMBEDDING_DIMENSION
+from sst_agent.app.core.config import DATABASE_URL, DB_DDL_AUTO, EMBEDDING_DIMENSION
 from typing import List
 import logging
 
@@ -38,12 +38,19 @@ def init_db():
     """
     Inicializa la base de datos creando la extensión pgvector y las tablas.
     """
+    if DB_DDL_AUTO in {"none", "false", "off", "disable", "disabled"}:
+        logger.info("DB_DDL_AUTO deshabilitado; se omite la creación automática de tablas")
+        return True
+
     try:
         # Crear extensión pgvector
         with engine.connect() as conn:
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
             conn.commit()
         
+        if DB_DDL_AUTO in {"drop-create", "create-drop"}:
+            Base.metadata.drop_all(bind=engine)
+
         # Crear todas las tablas
         Base.metadata.create_all(bind=engine)
         logger.info("Base de datos inicializada correctamente")
