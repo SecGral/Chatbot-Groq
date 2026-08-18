@@ -12,6 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sst_agent.app.core.config import ALLOWED_ORIGINS, PROJECT_NAME, VERSION
 from sst_agent.app.services.db import init_db
 from sst_agent.app.api.router import router
+from sst_agent.app.rag.loader import get_all_files
+from sst_agent.app.services.indexing_service import IndexingService
 from sst_agent.app.services.session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
@@ -50,9 +52,30 @@ async def cleanup_sessions_task():
             logger.error(f"Error en tarea de limpieza: {e}")
 
 
+async def auto_index_documents_task():
+    """Indexa automáticamente los documentos al iniciar si faltan o no existen."""
+    try:
+        files = get_all_files()
+        if not files:
+            logger.info("No hay documentos disponibles para indexar al inicio")
+            return
+
+        result = IndexingService.index_all_documents(files)
+        logger.info(
+            "Indexación automática completada: %s indexados, %s omitidos, %s errores",
+            result.get("indexed", 0),
+            result.get("skipped", 0),
+            result.get("errors", 0),
+        )
+    except Exception as e:
+        logger.error(f"Error en indexación automática: {e}")
+
+
 @app.on_event("startup")
 async def startup_event():
     """Inicia tareas de fondo al arrancar la app."""
     logger.info("🚀 Iniciando SST Bot...")
+    logger.info("📚 Iniciando verificación e indexación automática de documentos")
     logger.info("📅 Iniciando tarea de limpieza de sesiones (cada 30 min)")
+    asyncio.create_task(auto_index_documents_task())
     asyncio.create_task(cleanup_sessions_task())
