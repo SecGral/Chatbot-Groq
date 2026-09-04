@@ -1,10 +1,10 @@
 from groq import Groq
 import logging
-from sst_agent.app.core.config import GROQ_API_KEY
+from sst_agent.app.core.config import GROQ_API_KEY, GROQ_MODEL
 
 logger = logging.getLogger(__name__)
 
-MODEL = "llama-3.1-8b-instant"
+MODEL = GROQ_MODEL
 
 SYSTEM_PROMPT = """You are an expert in Occupational Safety and Health (SST/OSH).
 

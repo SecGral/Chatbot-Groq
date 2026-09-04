@@ -13,6 +13,7 @@ DEBUG = os.getenv("DEBUG", "false").lower() in {"1", "true", "yes", "on"}
 
 # Groq API
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 
 def build_database_url() -> str:
     database_url = os.getenv("DATABASE_URL")
